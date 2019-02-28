@@ -25,7 +25,7 @@ void printMatrix(const auto* inMatrix)
     {
         for(auto j = 0; j<N; j++)
         {
-            cout<<myMatrix.at(i).at(j)<<" ";
+            cout<<inMatrix.at(i).at(j)<<" ";
         }
         cout<<endl;
     }
@@ -38,12 +38,25 @@ void PopulateRandomMatrux(auto* inMatrix)
     {
         for(auto j = 0; j<N; j++)
         {
-            myMatrix.at(i).at(j) = rand()%10;
+            inMatrix.at(i).at(j) = rand()%10;
         }
     }
 }
 
-
+void SerialMatrixTranspose(auto* inMatrix)
+//Transposes a NxN matrix without any threading
+{
+    auto N = inMatrix->size();    
+    for(auto i = 0; i < N; i++)
+    {
+        for(auto j = i; j < N; j++){
+            auto tempVar = inMatrix->at(i).at(j);
+            inMatrix->at(i).at(j) = inMatrix->at(j).at(i);
+            inMatrix->at(j).at(i) = tempVar;
+            
+        }
+    }
+}
 
 int main(int argc, char **argv)
 {
