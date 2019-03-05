@@ -65,15 +65,16 @@ void transposeMatrixByChunks(auto* matrix, size_t chunkSize)
 //Issue is you can't return the new smaller chuncked matrix to the others without a printing method
     if(matrix->size()%chunkSize==0)
     {
-
-        auto myTemp = _2DSquareMatrix<vector<vector<int>>>(chunkSize);
+        auto resultingMatrixSize = matrix->size()/chunkSize;
+        cout<<"RS: "<<resultingMatrixSize<<endl;
+        auto myTemp = _2DSquareMatrix<vector<vector<int>>>(resultingMatrixSize);
         auto temp2DMatrixA = _2DSquareMatrix<int>(chunkSize);
 
 
-        for(auto i = 0; i < chunkSize; i++)//Cols
+        for(auto i = 0; i < resultingMatrixSize; i++)//Cols
         {//Assign the values of the matrix to the temp matrices
 
-            for(auto j = 0; j < chunkSize; j++)//Rows
+            for(auto j = 0; j < resultingMatrixSize; j++)//Rows
             {
 
                 for(auto k = 0; k < chunkSize; k++)
@@ -91,17 +92,21 @@ void transposeMatrixByChunks(auto* matrix, size_t chunkSize)
         }
 
         //Transpose the matrix by first transposing the  smaller matrices and then the larger
-        for(auto i = 0; i<chunkSize; i++)
-            for(auto j = 0; j<chunkSize; j++)
+        for(auto i = 0; i<resultingMatrixSize; i++)
+            for(auto j = 0; j<resultingMatrixSize; j++)
                 SerialMatrixTranspose(&myTemp.at(i).at(j));
         SerialMatrixTranspose(&myTemp);
 
 
-        for(auto i = 0; i<chunkSize; i++)
-            for(auto j = 0; j<chunkSize; j++){
-                printMatrix(&myTemp.at(i).at(j));
+        for(auto i = 0; i<resultingMatrixSize; i++){
+
+
+            for(auto j = 0; j<resultingMatrixSize; j++){
+                printMatrix(&myTemp.at(j).at(i));
                 cout<<endl;
               }
+              cout<<"----------"<<endl;
+            }
     }
 
 }
@@ -111,11 +116,11 @@ int main(int argc, char **argv)
 {
 
     srand(time(NULL));
-    auto my2dM = _2DSquareMatrix<int>(9);
+    auto my2dM = _2DSquareMatrix<int>(6);
     PopulateRandomMatrix(&my2dM);
     printMatrix(&my2dM);
     cout<<endl;
-    transposeMatrixByChunks(&my2dM,3);
+    transposeMatrixByChunks(&my2dM,2);
     //printMatrix(&my2dM);
 
 
