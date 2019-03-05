@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include <iostream>
 #include <vector>
+#include <time.h>
 
 using namespace std;
 
@@ -25,20 +26,20 @@ void printMatrix(const auto* inMatrix)
     {
         for(auto j = 0; j<N; j++)
         {
-            cout<<inMatrix.at(i).at(j)<<" ";
+            cout<<inMatrix->at(i).at(j)<<" ";
         }
         cout<<endl;
     }
 }
 
-void PopulateRandomMatrux(auto* inMatrix)
+void PopulateRandomMatrix(auto* inMatrix)
 {//Populate Matrix with random values between 0 and 9
     auto N = inMatrix->size();
     for(auto i = 0; i<N; i++)
     {
         for(auto j = 0; j<N; j++)
         {
-            inMatrix.at(i).at(j) = rand()%10;
+            inMatrix->at(i).at(j) = rand()%10;
         }
     }
 }
@@ -53,13 +54,61 @@ void SerialMatrixTranspose(auto* inMatrix)
             auto tempVar = inMatrix->at(i).at(j);
             inMatrix->at(i).at(j) = inMatrix->at(j).at(i);
             inMatrix->at(j).at(i) = tempVar;
-            
+            cout<<endl;
         }
     }
 }
 
+
+auto transposeMatrixByChunks(auto* matrix, size_t chunkSize)
+{//Transpose a matrix by dividing it into specified sized chunks. The matrix will have to be a factor of the chunk size to chunk evenly
+    if(matrix->size()%chunkSize==0)
+    {
+        
+        auto myTemp = _2DSquareMatrix<vector<vector<int>>>(chunkSize);
+        auto temp2DMatrixA = _2DSquareMatrix<int>(chunkSize);
+        
+        
+        for(auto i = 0; i < chunkSize; i++)//Cols
+        {//Assign the values of the matrix to the temp matrices
+        
+            for(auto j = 0; j < chunkSize; j++)//Rows
+            {
+                
+                for(auto k = 0; k < chunkSize; k++)
+                {
+                    
+                    for(auto l = 0; l < chunkSize; l++)
+                    {
+                        //Iterate along each row and col of the passed matrix to a temp matrix. Assign that temp matrix to the big larger matrix once it reaches an iteration of chunkSize
+                        temp2DMatrixA.at(k).at(l) = matrix->at(k+(i*chunkSize)).at(l+(j*chunkSize));                        
+                    }
+                }
+                myTemp.at(i).at(j) = temp2DMatrixA;
+            }
+                
+        }
+        
+        //print the matrix
+        for(auto i = 0; i<chunkSize; i++)
+            for(auto j = 0; j<chunkSize; j++)
+                printMatrix(&myTemp.at(i).at(j));
+    }
+    return 0;
+}
+
+
 int main(int argc, char **argv)
 {
+    
+    srand(time(NULL));
+    auto my2dM = _2DSquareMatrix<int>(4);
+    PopulateRandomMatrix(&my2dM);
+    printMatrix(&my2dM);
+    cout<<endl;
+    transposeMatrixByChunks(&my2dM,2);
+    
+    
     
 	return 0;
 }
