@@ -112,6 +112,21 @@ void transposeMatrixByChunks(auto* matrix, size_t chunkSize)
 }
 
 
+void transposeDiagonally(auto* matrix)
+{//Transposes the matrix along the diagonal. Also known as "in-place". This does change the passed matrix
+	auto tempMatrix = _2DSquareMatrix<int>(matrix->size());
+	for(auto i = 0; i<matrix->size(); i++)
+	{
+		for(auto j = i; j < matrix->size(); j++)
+		{
+		auto tempVal = matrix->at(i).at(j);
+		matrix->at(i).at(j) = matrix->at(j).at(i);
+		matrix->at(j).at(i) = tempVal;		
+		}
+	}
+}
+
+
 int main(int argc, char **argv)
 {
 
@@ -120,9 +135,9 @@ int main(int argc, char **argv)
     PopulateRandomMatrix(&my2dM);
     printMatrix(&my2dM);
     cout<<endl;
-    transposeMatrixByChunks(&my2dM,2);
-    //printMatrix(&my2dM);
-
+    //transposeMatrixByChunks(&my2dM,2);
+    transposeDiagonally(&my2dM);
+	printMatrix(&my2dM);
 
 
 	return 0;
