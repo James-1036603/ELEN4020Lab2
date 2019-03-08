@@ -116,11 +116,11 @@ void transposeMatrixByChunks(auto* matrix, size_t chunkSize)
 }
 
 
-void transposeDiagonally(auto* matrix)
+void transposeDiagonally(auto* matrix, int threads)
 {//Transposes the matrix along the diagonal. Also known as "in-place". This does change the passed matrix
 	auto tempMatrix = _2DSquareMatrix<int>(matrix->size());
 	omp_set_num_threads(threads);
-	
+	#pragma omp parallel for
 	for(auto i = 0; i<matrix->size(); i++)
 	{
 		for(auto j = i; j < matrix->size(); j++)
@@ -155,8 +155,20 @@ int main(int argc, char **argv)
 	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
 	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
 	cout<<"time taken serial 4 thread: "<<fixed<<time_taken<<" sec"<<endl;
+    
+    gettimeofday(&start, NULL);
+    transposeDiagonally(&my2dM,1);
+	gettimeofday(&end, NULL);
+	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+	cout<<"time taken diagonal 1 thread: "<<fixed<<time_taken<<" sec"<<endl;
 
 
-	
+	gettimeofday(&start, NULL);
+    transposeDiagonally(&my2dM,4);
+	gettimeofday(&end, NULL);
+	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+	cout<<"time taken diagonal 4 thread: "<<fixed<<time_taken<<" sec"<<endl;
 	return 0;
 }
