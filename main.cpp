@@ -64,17 +64,19 @@ void SerialMatrixTranspose(auto* inMatrix, int threads)
 }
 
 
-void transposeMatrixByChunks(auto* matrix, size_t chunkSize)
+void transposeMatrixByChunks(auto* matrix, size_t chunkSize, int threads)
 {//Transpose a matrix by dividing it into specified sized chunks. The matrix will have to be a factor of the chunk size to chunk evenly. THIS DOES NOT RETURN A MTRIX> MERELY TRANSPOSES AND DISPLAYS
 //Issue is you can't return the new smaller chuncked matrix to the others without a printing method
+		//omp_set_num_threads(threads);
+		
+		//#pragma omp parallel for
     if(matrix->size()%chunkSize==0)
     {
         auto resultingMatrixSize = matrix->size()/chunkSize;
-        cout<<"RS: "<<resultingMatrixSize<<endl;
+        
         auto myTemp = _2DSquareMatrix<vector<vector<int>>>(resultingMatrixSize);
         auto temp2DMatrixA = _2DSquareMatrix<int>(chunkSize);
-
-
+		
         for(auto i = 0; i < resultingMatrixSize; i++)//Cols
         {//Assign the values of the matrix to the temp matrices
 
@@ -143,7 +145,7 @@ int main(int argc, char **argv)
     
     
 	gettimeofday(&start, NULL);
-    SerialMatrixTranspose(&my2dM,0);
+    SerialMatrixTranspose(&my2dM,1);
 	gettimeofday(&end, NULL);
 	double time_taken = (end.tv_sec - start.tv_sec) * 1e6;
 	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
