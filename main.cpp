@@ -2,7 +2,9 @@
 #include <pthread.h>
 #include <iostream>
 #include <vector>
-#include <time.h>
+#include <sys/time.h>
+#include <omp.h>
+int omp_get_num_threads();
 
 using namespace std;
 
@@ -44,11 +46,13 @@ void PopulateRandomMatrix(auto* inMatrix)
     }
 }
 
-void SerialMatrixTranspose(auto* inMatrix)
+void SerialMatrixTranspose(auto* inMatrix, int threads)
 //Transposes a NxN matrix without any threading
 {
 
     auto N = inMatrix->size();
+	omp_set_num_threads(threads);
+	#pragma omp parallel for
     for(auto i = 0; i < N; i++)
     {
         for(auto j = i; j < N; j++){
@@ -115,6 +119,8 @@ void transposeMatrixByChunks(auto* matrix, size_t chunkSize)
 void transposeDiagonally(auto* matrix)
 {//Transposes the matrix along the diagonal. Also known as "in-place". This does change the passed matrix
 	auto tempMatrix = _2DSquareMatrix<int>(matrix->size());
+	omp_set_num_threads(threads);
+	
 	for(auto i = 0; i<matrix->size(); i++)
 	{
 		for(auto j = i; j < matrix->size(); j++)
@@ -130,15 +136,27 @@ void transposeDiagonally(auto* matrix)
 int main(int argc, char **argv)
 {
 
-    srand(time(NULL));
-    auto my2dM = _2DSquareMatrix<int>(6);
+	srand(time(NULL));
+	struct timeval start,end;
+    auto my2dM = _2DSquareMatrix<int>(4096);
     PopulateRandomMatrix(&my2dM);
-    printMatrix(&my2dM);
-    cout<<endl;
-    //transposeMatrixByChunks(&my2dM,2);
-    transposeDiagonally(&my2dM);
-	printMatrix(&my2dM);
+    
+    
+	gettimeofday(&start, NULL);
+    SerialMatrixTranspose(&my2dM,0);
+	gettimeofday(&end, NULL);
+	double time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+	cout<<"time taken serial 1 thread: "<<fixed<<time_taken<<" sec"<<endl;
+	
+	gettimeofday(&start, NULL);
+    SerialMatrixTranspose(&my2dM,4);
+	gettimeofday(&end, NULL);
+	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+	cout<<"time taken serial 4 thread: "<<fixed<<time_taken<<" sec"<<endl;
 
 
+	
 	return 0;
 }
