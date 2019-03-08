@@ -67,16 +67,16 @@ void SerialMatrixTranspose(auto* inMatrix, int threads)
 void transposeMatrixByChunks(auto* matrix, size_t chunkSize, int threads)
 {//Transpose a matrix by dividing it into specified sized chunks. The matrix will have to be a factor of the chunk size to chunk evenly. THIS DOES NOT RETURN A MTRIX> MERELY TRANSPOSES AND DISPLAYS
 //Issue is you can't return the new smaller chuncked matrix to the others without a printing method
-		//omp_set_num_threads(threads);
+		omp_set_num_threads(threads);
 		
-		//#pragma omp parallel for
+		
     if(matrix->size()%chunkSize==0)
     {
         auto resultingMatrixSize = matrix->size()/chunkSize;
         
         auto myTemp = _2DSquareMatrix<vector<vector<int>>>(resultingMatrixSize);
         auto temp2DMatrixA = _2DSquareMatrix<int>(chunkSize);
-		
+		#pragma omp parallel for
         for(auto i = 0; i < resultingMatrixSize; i++)//Cols
         {//Assign the values of the matrix to the temp matrices
 
@@ -98,21 +98,12 @@ void transposeMatrixByChunks(auto* matrix, size_t chunkSize, int threads)
         }
 
         //Transpose the matrix by first transposing the  smaller matrices and then the larger
+        
         for(auto i = 0; i<resultingMatrixSize; i++)
             for(auto j = 0; j<resultingMatrixSize; j++)
-                SerialMatrixTranspose(&myTemp.at(i).at(j));
-        SerialMatrixTranspose(&myTemp);
+                SerialMatrixTranspose(&myTemp.at(i).at(j), threads);
+        SerialMatrixTranspose(&myTemp,threads);
 
-
-        for(auto i = 0; i<resultingMatrixSize; i++){
-
-
-            for(auto j = 0; j<resultingMatrixSize; j++){
-                printMatrix(&myTemp.at(j).at(i));
-                cout<<endl;
-              }
-              cout<<"----------"<<endl;
-            }
     }
 
 }
@@ -172,5 +163,20 @@ int main(int argc, char **argv)
 	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
 	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
 	cout<<"time taken diagonal 4 thread: "<<fixed<<time_taken<<" sec"<<endl;
+    
+    gettimeofday(&start, NULL);
+    transposeMatrixByChunks(&my2dM,8,1);
+	gettimeofday(&end, NULL);
+	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+	cout<<"time taken chunks 1 thread: "<<fixed<<time_taken<<" sec"<<endl;
+
+
+	gettimeofday(&start, NULL);
+    transposeMatrixByChunks(&my2dM,8,4);
+	gettimeofday(&end, NULL);
+	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+	cout<<"time taken chunks 4 thread: "<<fixed<<time_taken<<" sec"<<endl;
 	return 0;
 }
