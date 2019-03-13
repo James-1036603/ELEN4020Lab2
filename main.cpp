@@ -2,7 +2,9 @@
 #include <pthread.h>
 #include <iostream>
 #include <vector>
-#include <time.h>
+#include <sys/time.h>
+#include <omp.h>
+int omp_get_num_threads();
 
 using namespace std;
 
@@ -44,11 +46,13 @@ void PopulateRandomMatrix(auto* inMatrix)
     }
 }
 
-void SerialMatrixTranspose(auto* inMatrix)
+void SerialMatrixTranspose(auto* inMatrix, int threads)
 //Transposes a NxN matrix without any threading
 {
 
     auto N = inMatrix->size();
+	omp_set_num_threads(threads);
+	#pragma omp parallel for
     for(auto i = 0; i < N; i++)
     {
         for(auto j = i; j < N; j++){
@@ -60,17 +64,19 @@ void SerialMatrixTranspose(auto* inMatrix)
 }
 
 
-void transposeMatrixByChunks(auto* matrix, size_t chunkSize)
+void transposeMatrixByChunks(auto* matrix, size_t chunkSize, int threads)
 {//Transpose a matrix by dividing it into specified sized chunks. The matrix will have to be a factor of the chunk size to chunk evenly. THIS DOES NOT RETURN A MTRIX> MERELY TRANSPOSES AND DISPLAYS
 //Issue is you can't return the new smaller chuncked matrix to the others without a printing method
+		omp_set_num_threads(threads);
+		
+		
     if(matrix->size()%chunkSize==0)
     {
         auto resultingMatrixSize = matrix->size()/chunkSize;
-        cout<<"RS: "<<resultingMatrixSize<<endl;
+        
         auto myTemp = _2DSquareMatrix<vector<vector<int>>>(resultingMatrixSize);
         auto temp2DMatrixA = _2DSquareMatrix<int>(chunkSize);
-
-
+		#pragma omp parallel for
         for(auto i = 0; i < resultingMatrixSize; i++)//Cols
         {//Assign the values of the matrix to the temp matrices
 
@@ -92,29 +98,22 @@ void transposeMatrixByChunks(auto* matrix, size_t chunkSize)
         }
 
         //Transpose the matrix by first transposing the  smaller matrices and then the larger
+        
         for(auto i = 0; i<resultingMatrixSize; i++)
             for(auto j = 0; j<resultingMatrixSize; j++)
-                SerialMatrixTranspose(&myTemp.at(i).at(j));
-        SerialMatrixTranspose(&myTemp);
+                SerialMatrixTranspose(&myTemp.at(i).at(j), threads);
+        SerialMatrixTranspose(&myTemp,threads);
 
-
-        for(auto i = 0; i<resultingMatrixSize; i++){
-
-
-            for(auto j = 0; j<resultingMatrixSize; j++){
-                printMatrix(&myTemp.at(j).at(i));
-                cout<<endl;
-              }
-              cout<<"----------"<<endl;
-            }
     }
 
 }
 
 
-void transposeDiagonally(auto* matrix)
+void transposeDiagonally(auto* matrix, int threads)
 {//Transposes the matrix along the diagonal. Also known as "in-place". This does change the passed matrix
 	auto tempMatrix = _2DSquareMatrix<int>(matrix->size());
+	omp_set_num_threads(threads);
+	#pragma omp parallel for
 	for(auto i = 0; i<matrix->size(); i++)
 	{
 		for(auto j = i; j < matrix->size(); j++)
@@ -130,15 +129,54 @@ void transposeDiagonally(auto* matrix)
 int main(int argc, char **argv)
 {
 
-    srand(time(NULL));
-    auto my2dM = _2DSquareMatrix<int>(6);
+	srand(time(NULL));
+	struct timeval start,end;
+    auto my2dM = _2DSquareMatrix<int>(4096);
     PopulateRandomMatrix(&my2dM);
-    printMatrix(&my2dM);
-    cout<<endl;
-    //transposeMatrixByChunks(&my2dM,2);
-    transposeDiagonally(&my2dM);
-	printMatrix(&my2dM);
+    
+    
+	gettimeofday(&start, NULL);
+    SerialMatrixTranspose(&my2dM,1);
+	gettimeofday(&end, NULL);
+	double time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+	cout<<"time taken serial 1 thread: "<<fixed<<time_taken<<" sec"<<endl;
+	
+	gettimeofday(&start, NULL);
+    SerialMatrixTranspose(&my2dM,4);
+	gettimeofday(&end, NULL);
+	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+	cout<<"time taken serial 4 thread: "<<fixed<<time_taken<<" sec"<<endl;
+    
+    gettimeofday(&start, NULL);
+    transposeDiagonally(&my2dM,1);
+	gettimeofday(&end, NULL);
+	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+	cout<<"time taken diagonal 1 thread: "<<fixed<<time_taken<<" sec"<<endl;
 
 
+	gettimeofday(&start, NULL);
+    transposeDiagonally(&my2dM,4);
+	gettimeofday(&end, NULL);
+	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+	cout<<"time taken diagonal 4 thread: "<<fixed<<time_taken<<" sec"<<endl;
+    
+    gettimeofday(&start, NULL);
+    transposeMatrixByChunks(&my2dM,8,1);
+	gettimeofday(&end, NULL);
+	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+	cout<<"time taken chunks 1 thread: "<<fixed<<time_taken<<" sec"<<endl;
+
+
+	gettimeofday(&start, NULL);
+    transposeMatrixByChunks(&my2dM,8,4);
+	gettimeofday(&end, NULL);
+	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+	cout<<"time taken chunks 4 thread: "<<fixed<<time_taken<<" sec"<<endl;
 	return 0;
 }
