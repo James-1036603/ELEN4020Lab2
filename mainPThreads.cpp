@@ -4,6 +4,8 @@
 #include <vector>
 #include <time.h>
 
+#define NUM_THREADS     5
+
 using namespace std;
 
 template<typename T> vector<vector<T>> _2DSquareMatrix(int dimension)
@@ -39,22 +41,7 @@ void PopulateRandomMatrix(auto* inMatrix)
     {
         for(auto j = 0; j<N; j++)
         {
-            inMatrix->at(i).at(j) = rand()%N;
-        }
-    }
-}
-
-void SerialMatrixTranspose(auto* inMatrix)
-//Transposes a NxN matrix without any threading
-{
-
-    auto N = inMatrix->size();
-    for(auto i = 0; i < N; i++)
-    {
-        for(auto j = i; j < N; j++){
-            auto tempVar = inMatrix->at(i).at(j);
-            inMatrix->at(i).at(j) = inMatrix->at(j).at(i);
-            inMatrix->at(j).at(i) = tempVar;
+            inMatrix->at(i).at(j) = rand()% (N+1);
         }
     }
 }
@@ -124,6 +111,23 @@ void transposeDiagonally(auto* matrix)
 		matrix->at(j).at(i) = tempVal;		
 		}
 	}
+}
+
+struct arguments {
+    int thread_id;
+    vector<vector<int>> *matrix;  
+};
+
+struct arguments argument_array [NUM_THREADS];
+
+void *transpose_Diagonally(auto *thread_id)
+{
+    struct arguments *thread_arguments;
+    
+    int taskid = thread_arguments->thread_id;
+    vector<vector<int>> *arg_matrix = thread_arguments->matrix;
+    
+    
 }
 
 
