@@ -5,7 +5,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#define NUM_THREADS     5
+#define NUM_THREADS     2
 
 using namespace std;
 
@@ -116,6 +116,7 @@ void transposeDiagonally(auto* matrix)
 
 
 auto global_array = _2DSquareMatrix<int>(10);
+pthread_mutex_t array_mutex;
 
 void *print(void *tid){
 
@@ -128,7 +129,18 @@ void *print(void *tid){
     start = (*mytid * iterations);
     end = start + iterations;
 
-    cout << "Thread " << *mytid << " doing iterations " << start << " to " << end << endl;
+    //cout << "Thread " << *mytid << " doing iterations " << start << " to " << end << endl;
+
+    pthread_mutex_lock (&array_mutex);
+    for (int i = start; i < end; i++){
+        for (int j = 0; j < global_array.size(); j++){
+            cout << global_array[i][j] << "\t";
+        }
+        cout << "\n" << endl;
+    }
+    pthread_mutex_unlock(&array_mutex);
+
+    pthread_exit(NULL);
     
 }
 
@@ -161,15 +173,18 @@ int main(int argc, char **argv)
 
     }
 
-    pthread_attr_destroy(&attr);
+    
     for (int i = 0; i < NUM_THREADS; i++){
         rc = pthread_join(pthreads[i], &status);
 
         cout << "Main: completed thread: " << i << endl;
     }
 
-	//printMatrix(&my2dM);
+    pthread_attr_destroy(&attr);
+    pthread_mutex_destroy(&array_mutex);
 
+	//printMatrix(&my2dM);
+    //print(global_array);
     cout << "Done" << endl;
 
      pthread_exit(NULL);
