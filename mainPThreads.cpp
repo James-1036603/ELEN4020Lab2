@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <time.h>
+#include <unistd.h>
 
 #define NUM_THREADS     5
 
@@ -113,53 +114,65 @@ void transposeDiagonally(auto* matrix)
 	}
 }
 
-struct arguments {
-    int thread_id;
-    vector<vector<int>> *matrix;  
-};
 
-// struct arguments argument_array [NUM_THREADS];
+auto global_array = _2DSquareMatrix<int>(10);
 
-// void *transpose_Diagonally(auto *arguments)
-// {
-//     struct arguments *thread_arguments;
+void *print(void *tid){
+
+    int start, *mytid, end;
+    int iterations = global_array.size()/NUM_THREADS;
+
+    mytid = (int *)tid;
+
+    sleep(1);
+    start = (*mytid * iterations);
+    end = start + iterations;
+
+    cout << "Thread " << *mytid << " doing iterations " << start << " to " << end << endl;
     
-//     int taskid = thread_arguments->thread_id;
-//     vector<vector<int>> *arg_matrix = thread_arguments->matrix;
+}
 
-//     auto iterations = arg_matrix->size()/NUM_THREADS;
-
-//     int start_iteration = (taskid * iterations);
-//     int end_iteration = start_iteration + iterations;
-
-//     cout << "Thread " << taskid << " doing iterations " << start_iteration << " to " << end_iteration - 1 << endl;
-// }
 
 int main(int argc, char **argv)
 {
 
     srand(time(NULL));
-    auto my2dM = _2DSquareMatrix<int>(5);
-    PopulateRandomMatrix(&my2dM);
-    printMatrix(&my2dM);
+   // auto my2dM = _2DSquareMatrix<int>(5);
+    //PopulateRandomMatrix(&my2dM);
+   // printMatrix(&my2dM);
+   PopulateRandomMatrix(&global_array);
+   printMatrix(&global_array);
     cout<<endl;
     //transposeMatrixByChunks(&my2dM,2);
-    transposeDiagonally(&my2dM);
-    // pthread_t pthreads[NUM_THREADS];
-    // int rc;
+    //transposeDiagonally(&my2dM);
+    pthread_t pthreads[NUM_THREADS];
+    int rc, taskids[NUM_THREADS];
+    pthread_attr_t attr;
+    void *status;
 
-    // for (int t = 0; t < NUM_THREADS; t++) {
-    // argument_array[t].thread_id = t;
-    // argument_array[t].matrix = my2dM;
-    // rc = pthread_create(&pthreads[t], NULL, transpose_Diagonally, &argument_array[t]);
-    // if(rc) {
-    //     cout << "ERROR; return code from pthread_create() is " << rc << "\n" << endl;
-    //     exit(-1);
-    // }
-// }
-	printMatrix(&my2dM);
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-    // pthread_exit(NULL);
+    for (int i = 0; i < NUM_THREADS; i++){
+        taskids[i] = i;
+        cout << "main(): Creating thread - " << i << endl;
+
+        rc = pthread_create(&pthreads[i], &attr, print, (void *) &taskids[i]);
+
+    }
+
+    pthread_attr_destroy(&attr);
+    for (int i = 0; i < NUM_THREADS; i++){
+        rc = pthread_join(pthreads[i], &status);
+
+        cout << "Main: completed thread: " << i << endl;
+    }
+
+	//printMatrix(&my2dM);
+
+    cout << "Done" << endl;
+
+     pthread_exit(NULL);
 
 	return 0;
 }
