@@ -26,7 +26,7 @@ void printMatrix(const auto* inMatrix)
     {
         for(auto j = 0; j<N; j++)
         {
-            cout<<inMatrix->at(i).at(j)<<" ";
+            cout<<inMatrix->at(i).at(j)<<"\t";
         }
         cout<<endl;
     }
@@ -39,7 +39,7 @@ void PopulateRandomMatrix(auto* inMatrix)
     {
         for(auto j = 0; j<N; j++)
         {
-            inMatrix->at(i).at(j) = rand()%10;
+            inMatrix->at(i).at(j) = rand()%N;
         }
     }
 }
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
 {
 
     srand(time(NULL));
-    auto my2dM = _2DSquareMatrix<int>(6);
+    auto my2dM = _2DSquareMatrix<int>(5);
     PopulateRandomMatrix(&my2dM);
     printMatrix(&my2dM);
     cout<<endl;
