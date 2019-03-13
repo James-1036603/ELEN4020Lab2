@@ -118,18 +118,22 @@ struct arguments {
     vector<vector<int>> *matrix;  
 };
 
-struct arguments argument_array [NUM_THREADS];
+// struct arguments argument_array [NUM_THREADS];
 
-void *transpose_Diagonally(auto *thread_id)
-{
-    struct arguments *thread_arguments;
+// void *transpose_Diagonally(auto *arguments)
+// {
+//     struct arguments *thread_arguments;
     
-    int taskid = thread_arguments->thread_id;
-    vector<vector<int>> *arg_matrix = thread_arguments->matrix;
-    
-    
-}
+//     int taskid = thread_arguments->thread_id;
+//     vector<vector<int>> *arg_matrix = thread_arguments->matrix;
 
+//     auto iterations = arg_matrix->size()/NUM_THREADS;
+
+//     int start_iteration = (taskid * iterations);
+//     int end_iteration = start_iteration + iterations;
+
+//     cout << "Thread " << taskid << " doing iterations " << start_iteration << " to " << end_iteration - 1 << endl;
+// }
 
 int main(int argc, char **argv)
 {
@@ -141,8 +145,21 @@ int main(int argc, char **argv)
     cout<<endl;
     //transposeMatrixByChunks(&my2dM,2);
     transposeDiagonally(&my2dM);
+    // pthread_t pthreads[NUM_THREADS];
+    // int rc;
+
+    // for (int t = 0; t < NUM_THREADS; t++) {
+    // argument_array[t].thread_id = t;
+    // argument_array[t].matrix = my2dM;
+    // rc = pthread_create(&pthreads[t], NULL, transpose_Diagonally, &argument_array[t]);
+    // if(rc) {
+    //     cout << "ERROR; return code from pthread_create() is " << rc << "\n" << endl;
+    //     exit(-1);
+    // }
+// }
 	printMatrix(&my2dM);
 
+    // pthread_exit(NULL);
 
 	return 0;
 }
