@@ -31,7 +31,7 @@ void printMatrix(const auto* inMatrix)
         {
             cout<<inMatrix->at(i).at(j)<<"\t";
         }
-        cout<<endl;
+        cout <<endl;
     }
 }
 
@@ -144,6 +144,37 @@ void *print(void *tid){
     
 }
 
+void *diagonalTranspose(void *tid){
+
+    int start, *mytid, end;
+    int iterations = global_array.size()/NUM_THREADS;
+
+    mytid = (int *)tid;
+
+    sleep(1);
+    start = (*mytid * iterations);
+    end = start + iterations;
+
+    //cout << "Thread " << *mytid << " doing iterations " << start << " to " << end << endl;
+
+    pthread_mutex_lock (&array_mutex);
+    for (int i = start; i < end; i++){
+        for (int j = i; j < global_array.size(); j++){
+            
+            auto temp = global_array[i][j];
+            global_array[i][j] = global_array[j][i];
+            global_array[j][i] = temp;
+
+       }
+    }
+    pthread_mutex_unlock(&array_mutex);
+
+    pthread_exit(NULL);
+    
+}
+
+
+
 
 int main(int argc, char **argv)
 {
@@ -157,6 +188,9 @@ int main(int argc, char **argv)
     cout<<endl;
     //transposeMatrixByChunks(&my2dM,2);
     //transposeDiagonally(&my2dM);
+    transposeDiagonally(&global_array);
+    printMatrix(&global_array);
+
     pthread_t pthreads[NUM_THREADS];
     int rc, taskids[NUM_THREADS];
     pthread_attr_t attr;
@@ -169,7 +203,7 @@ int main(int argc, char **argv)
         taskids[i] = i;
         cout << "main(): Creating thread - " << i << endl;
 
-        rc = pthread_create(&pthreads[i], &attr, print, (void *) &taskids[i]);
+        rc = pthread_create(&pthreads[i], &attr, diagonalTranspose, (void *) &taskids[i]);
 
     }
 
@@ -184,7 +218,7 @@ int main(int argc, char **argv)
     pthread_mutex_destroy(&array_mutex);
 
 	//printMatrix(&my2dM);
-    //print(global_array);
+    printMatrix(&global_array);
     cout << "Done" << endl;
 
      pthread_exit(NULL);
