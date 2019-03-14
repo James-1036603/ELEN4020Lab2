@@ -68,15 +68,15 @@ void transposeMatrixByChunks(auto* matrix, size_t chunkSize, int threads)
 {//Transpose a matrix by dividing it into specified sized chunks. The matrix will have to be a factor of the chunk size to chunk evenly. THIS DOES NOT RETURN A MTRIX> MERELY TRANSPOSES AND DISPLAYS
 //Issue is you can't return the new smaller chuncked matrix to the others without a printing method
 		omp_set_num_threads(threads);
-		
-		
+
+
     if(matrix->size()%chunkSize==0)
     {
         auto resultingMatrixSize = matrix->size()/chunkSize;
-        
+
         auto myTemp = _2DSquareMatrix<vector<vector<int>>>(resultingMatrixSize);
         auto temp2DMatrixA = _2DSquareMatrix<int>(chunkSize);
-		#pragma omp parallel for
+		    #pragma omp parallel for
         for(auto i = 0; i < resultingMatrixSize; i++)//Cols
         {//Assign the values of the matrix to the temp matrices
 
@@ -98,7 +98,7 @@ void transposeMatrixByChunks(auto* matrix, size_t chunkSize, int threads)
         }
 
         //Transpose the matrix by first transposing the  smaller matrices and then the larger
-        
+
         for(auto i = 0; i<resultingMatrixSize; i++)
             for(auto j = 0; j<resultingMatrixSize; j++)
                 SerialMatrixTranspose(&myTemp.at(i).at(j), threads);
@@ -120,63 +120,91 @@ void transposeDiagonally(auto* matrix, int threads)
 		{
 		auto tempVal = matrix->at(i).at(j);
 		matrix->at(i).at(j) = matrix->at(j).at(i);
-		matrix->at(j).at(i) = tempVal;		
+		matrix->at(j).at(i) = tempVal;
 		}
 	}
 }
 
+void performComparison(auto* matrix, int threads)
+{//Perform an analysis of one thread to specified threads
+  struct timeval start,end;
+  cout<<"Performing comparison on size: "<<matrix->size()<<endl;
+  //SerialMatrixTranspose
+  gettimeofday(&start, NULL);
+  SerialMatrixTranspose(matrix,1);
+	gettimeofday(&end, NULL);
+	double time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+	cout<<"time taken serial 1 thread: "<<fixed<<time_taken<<" sec"<<endl;
+
+	gettimeofday(&start, NULL);
+  SerialMatrixTranspose(matrix,threads);
+	gettimeofday(&end, NULL);
+	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+	cout<<"time taken serial "<<threads<<" thread: "<<fixed<<time_taken<<" sec"<<endl;
+
+  //transposeDiagonally
+  gettimeofday(&start, NULL);
+  transposeDiagonally(matrix,1);
+  gettimeofday(&end, NULL);
+  time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+  time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+  cout<<"time taken diagonal 1 thread: "<<fixed<<time_taken<<" sec"<<endl;
+
+
+  gettimeofday(&start, NULL);
+  transposeDiagonally(matrix,threads);
+  gettimeofday(&end, NULL);
+  time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+  time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+  cout<<"time taken diagonal "<<threads<<" thread: "<<fixed<<time_taken<<" sec"<<endl;
+
+  //transposeMatrixByChunks
+  gettimeofday(&start, NULL);
+  transposeMatrixByChunks(matrix,matrix->size()/8,1);
+  gettimeofday(&end, NULL);
+  time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+  time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+  cout<<"time taken chunks 1 thread: "<<fixed<<time_taken<<" sec"<<endl;
+
+
+  gettimeofday(&start, NULL);
+  transposeMatrixByChunks(matrix,matrix->size()/8,threads);
+  gettimeofday(&end, NULL);
+  time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+  time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+  cout<<"time taken chunks "<<threads<<" thread: "<<fixed<<time_taken<<" sec"<<endl;
+}
 
 int main(int argc, char **argv)
 {
 
 	srand(time(NULL));
 	struct timeval start,end;
-    auto my2dM = _2DSquareMatrix<int>(4096);
-    PopulateRandomMatrix(&my2dM);
-    
-    
-	gettimeofday(&start, NULL);
-    SerialMatrixTranspose(&my2dM,1);
-	gettimeofday(&end, NULL);
-	double time_taken = (end.tv_sec - start.tv_sec) * 1e6;
-	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
-	cout<<"time taken serial 1 thread: "<<fixed<<time_taken<<" sec"<<endl;
-	
-	gettimeofday(&start, NULL);
-    SerialMatrixTranspose(&my2dM,4);
-	gettimeofday(&end, NULL);
-	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
-	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
-	cout<<"time taken serial 4 thread: "<<fixed<<time_taken<<" sec"<<endl;
-    
-    gettimeofday(&start, NULL);
-    transposeDiagonally(&my2dM,1);
-	gettimeofday(&end, NULL);
-	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
-	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
-	cout<<"time taken diagonal 1 thread: "<<fixed<<time_taken<<" sec"<<endl;
+  int numberOfThreads = 4;
+  //128
+  auto my2dM = _2DSquareMatrix<int>(128);
+  PopulateRandomMatrix(&my2dM);
+  performComparison(&my2dM, numberOfThreads);
+  cout<<endl;
+  //1024
+  my2dM = _2DSquareMatrix<int>(1024);
+  PopulateRandomMatrix(&my2dM);
+  performComparison(&my2dM, numberOfThreads);
+  cout<<endl;
+  //2048
+  my2dM = _2DSquareMatrix<int>(2048);
+  PopulateRandomMatrix(&my2dM);
+  performComparison(&my2dM, numberOfThreads);
+  cout<<endl;
+  //4096
+  my2dM = _2DSquareMatrix<int>(4096);
+  PopulateRandomMatrix(&my2dM);
+  performComparison(&my2dM, numberOfThreads);
 
 
-	gettimeofday(&start, NULL);
-    transposeDiagonally(&my2dM,4);
-	gettimeofday(&end, NULL);
-	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
-	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
-	cout<<"time taken diagonal 4 thread: "<<fixed<<time_taken<<" sec"<<endl;
-    
-    gettimeofday(&start, NULL);
-    transposeMatrixByChunks(&my2dM,8,1);
-	gettimeofday(&end, NULL);
-	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
-	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
-	cout<<"time taken chunks 1 thread: "<<fixed<<time_taken<<" sec"<<endl;
 
 
-	gettimeofday(&start, NULL);
-    transposeMatrixByChunks(&my2dM,8,4);
-	gettimeofday(&end, NULL);
-	time_taken = (end.tv_sec - start.tv_sec) * 1e6;
-	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
-	cout<<"time taken chunks 4 thread: "<<fixed<<time_taken<<" sec"<<endl;
 	return 0;
 }
