@@ -85,16 +85,6 @@ void transposeMatrixByChunks(auto* matrix, size_t chunkSize)
                 SerialMatrixTranspose(&myTemp.at(i).at(j));
         SerialMatrixTranspose(&myTemp);
 
-
-        for(auto i = 0; i<resultingMatrixSize; i++){
-
-
-            for(auto j = 0; j<resultingMatrixSize; j++){
-                printMatrix(&myTemp.at(j).at(i));
-                cout<<endl;
-              }
-              cout<<"----------"<<endl;
-            }
     }
 
 }
@@ -144,49 +134,51 @@ int main(int argc, char **argv)
 {
 
     srand(time(NULL));
-    auto my2dM = _2DSquareMatrix<int>(5);
+    auto my2dM = _2DSquareMatrix<int>(64);
     PopulateRandomMatrix(&my2dM);
     printMatrix(&my2dM);
     cout<<endl;
 
-    pthread_t pthreads[NUM_THREADS];
-    int rc, taskids[NUM_THREADS];
-    pthread_attr_t attr;
-    void *status;
+    transposeMatrixByChunks(&my2dM, 8);
 
-    //initialise attribute 
-    pthread_attr_init(&attr);
+//     pthread_t pthreads[NUM_THREADS];
+//     int rc, taskids[NUM_THREADS];
+//     pthread_attr_t attr;
+//     void *status;
 
-    //configure attribute to signal that threads are joinable
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+//     //initialise attribute 
+//     pthread_attr_init(&attr);
 
-    for (int i = 0; i < NUM_THREADS; i++){
-        taskids[i] = i;
-        thread_data_array[i].matrix = &my2dM;
-        thread_data_array[i].thread_id = taskids[i];
+//     //configure attribute to signal that threads are joinable
+//     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-        rc = pthread_create(&pthreads[i], &attr, finalDTranspose, (void *) &thread_data_array[i]);
-        if(rc){
-            cout << "ERROR; return code from pthread_create() is " << rc << endl;
-            exit(-1);
-        }
-    }
+//     for (int i = 0; i < NUM_THREADS; i++){
+//         taskids[i] = i;
+//         thread_data_array[i].matrix = &my2dM;
+//         thread_data_array[i].thread_id = taskids[i];
+
+//         rc = pthread_create(&pthreads[i], &attr, finalDTranspose, (void *) &thread_data_array[i]);
+//         if(rc){
+//             cout << "ERROR; return code from pthread_create() is " << rc << endl;
+//             exit(-1);
+//         }
+//     }
 
 
-//join threads or wait until all threads complete routines
-    for (int i = 0; i < NUM_THREADS; i++){
-        rc = pthread_join(pthreads[i], &status);
-        if(rc){
-            cout << "Error: Unable to join " << rc << endl;
-            exit(-1);
-        }
+// //join threads or wait until all threads complete routines
+//     for (int i = 0; i < NUM_THREADS; i++){
+//         rc = pthread_join(pthreads[i], &status);
+//         if(rc){
+//             cout << "Error: Unable to join " << rc << endl;
+//             exit(-1);
+//         }
 
-        cout << "Main: completed thread: " << i << endl;
-        cout << "exiting with staus " << status << endl;
-    }
+//         cout << "Main: completed thread: " << i << endl;
+//         cout << "exiting with staus " << status << endl;
+//     }
 
-//destory attribute
-    pthread_attr_destroy(&attr);
+// //destory attribute
+//     pthread_attr_destroy(&attr);
 
     printMatrix(&my2dM);
     cout << "Done" << endl;
