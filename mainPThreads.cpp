@@ -99,128 +99,99 @@ void transposeMatrixByChunks(auto* matrix, size_t chunkSize)
 
 }
 
+//creating struct of arguments to pass into routine
+struct thread_data {
+    int thread_id;
+    vector<vector<int>> * matrix;    
+};
 
-void transposeDiagonally(auto* matrix)
-{//Transposes the matrix along the diagonal. Also known as "in-place". This does change the passed matrix
-	auto tempMatrix = _2DSquareMatrix<int>(matrix->size());
-	for(auto i = 0; i<matrix->size(); i++)
-	{
-		for(auto j = i; j < matrix->size(); j++)
-		{
-		auto tempVal = matrix->at(i).at(j);
-		matrix->at(i).at(j) = matrix->at(j).at(i);
-		matrix->at(j).at(i) = tempVal;		
-		}
-	}
-}
+//array of argument structs
+struct thread_data thread_data_array[NUM_THREADS];
+
+//diagonal transpose routine
+void *finalDTranspose (void * thread_arguments) {
+    auto taskid = 0;
+    vector<vector<int>> *array;
+    struct thread_data *arguments;
+
+    //setting local arguments to externally declared struct arguments
+    arguments = (struct thread_data *) thread_arguments;
+    taskid = arguments->thread_id;
+    array = arguments->matrix;
+
+    //allocating a certain number of iterations to each thread
+    auto iterations = array->size()/NUM_THREADS;
+    auto start = (taskid * iterations);
+    auto end = start + iterations;
 
 
-auto global_array = _2DSquareMatrix<int>(10);
-pthread_mutex_t array_mutex;
-
-void *print(void *tid){
-
-    int start, *mytid, end;
-    int iterations = global_array.size()/NUM_THREADS;
-
-    mytid = (int *)tid;
-
-    sleep(1);
-    start = (*mytid * iterations);
-    end = start + iterations;
-
-    //cout << "Thread " << *mytid << " doing iterations " << start << " to " << end << endl;
-
-    pthread_mutex_lock (&array_mutex);
-    for (int i = start; i < end; i++){
-        for (int j = 0; j < global_array.size(); j++){
-            cout << global_array[i][j] << "\t";
-        }
-        cout << "\n" << endl;
-    }
-    pthread_mutex_unlock(&array_mutex);
-
-    pthread_exit(NULL);
-    
-}
-
-void *diagonalTranspose(void *tid){
-
-    int start, *mytid, end;
-    int iterations = global_array.size()/NUM_THREADS;
-
-    mytid = (int *)tid;
-
-    sleep(1);
-    start = (*mytid * iterations);
-    end = start + iterations;
-
-    //cout << "Thread " << *mytid << " doing iterations " << start << " to " << end << endl;
-
-    pthread_mutex_lock (&array_mutex);
-    for (int i = start; i < end; i++){
-        for (int j = i; j < global_array.size(); j++){
+//performing diagonal transposition
+       for (int i = start; i < end; i++){
+        for (int j = i; j < array->size(); j++){
             
-            auto temp = global_array[i][j];
-            global_array[i][j] = global_array[j][i];
-            global_array[j][i] = temp;
+            auto temp = array->at(i).at(j);
+            array->at(i).at(j) = array->at(j).at(i);
+            array->at(j).at(i) = temp;
 
        }
     }
-    pthread_mutex_unlock(&array_mutex);
 
+//terminate thread after successful completion of routine
     pthread_exit(NULL);
-    
 }
-
-
-
 
 int main(int argc, char **argv)
 {
 
     srand(time(NULL));
-   // auto my2dM = _2DSquareMatrix<int>(5);
-    //PopulateRandomMatrix(&my2dM);
-   // printMatrix(&my2dM);
-   PopulateRandomMatrix(&global_array);
-   printMatrix(&global_array);
+    auto my2dM = _2DSquareMatrix<int>(5);
+    PopulateRandomMatrix(&my2dM);
+    printMatrix(&my2dM);
     cout<<endl;
-    //transposeMatrixByChunks(&my2dM,2);
-    //transposeDiagonally(&my2dM);
-    transposeDiagonally(&global_array);
-    printMatrix(&global_array);
 
     pthread_t pthreads[NUM_THREADS];
     int rc, taskids[NUM_THREADS];
     pthread_attr_t attr;
     void *status;
 
+    //initialise attribute 
     pthread_attr_init(&attr);
+
+    //configure attribute to signal that threads are joinable
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     for (int i = 0; i < NUM_THREADS; i++){
         taskids[i] = i;
-        cout << "main(): Creating thread - " << i << endl;
+        thread_data_array[i].matrix = &my2dM;
+        thread_data_array[i].thread_id = taskids[i];
 
-        rc = pthread_create(&pthreads[i], &attr, diagonalTranspose, (void *) &taskids[i]);
-
+        rc = pthread_create(&pthreads[i], &attr, finalDTranspose, (void *) &thread_data_array[i]);
+        if(rc){
+            cout << "ERROR; return code from pthread_create() is " << rc << endl;
+            exit(-1);
+        }
     }
 
-    
+
+//join threads or wait until all threads complete routines
     for (int i = 0; i < NUM_THREADS; i++){
         rc = pthread_join(pthreads[i], &status);
+        if(rc){
+            cout << "Error: Unable to join " << rc << endl;
+            exit(-1);
+        }
 
         cout << "Main: completed thread: " << i << endl;
+        cout << "exiting with staus " << status << endl;
     }
 
+//destory attribute
     pthread_attr_destroy(&attr);
-    pthread_mutex_destroy(&array_mutex);
 
-	//printMatrix(&my2dM);
-    printMatrix(&global_array);
+    printMatrix(&my2dM);
     cout << "Done" << endl;
 
+//terminate all remaining threads
      pthread_exit(NULL);
 
 	return 0;
