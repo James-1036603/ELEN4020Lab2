@@ -47,6 +47,22 @@ void PopulateRandomMatrix(auto* inMatrix)
     }
 }
 
+void SerialMatrixTranspose(auto* inMatrix)
+//Transposes a NxN matrix without any threading
+{
+
+    auto N = inMatrix->size();
+
+    for(auto i = 0; i < N; i++)
+    {
+        for(auto j = i; j < N; j++){
+            auto tempVar = inMatrix->at(i).at(j);
+            inMatrix->at(i).at(j) = inMatrix->at(j).at(i);
+            inMatrix->at(j).at(i) = tempVar;
+        }
+    }
+}
+
 
 void transposeMatrixByChunks(auto* matrix, size_t chunkSize)
 {//Transpose a matrix by dividing it into specified sized chunks. The matrix will have to be a factor of the chunk size to chunk evenly. THIS DOES NOT RETURN A MTRIX> MERELY TRANSPOSES AND DISPLAYS
@@ -54,7 +70,7 @@ void transposeMatrixByChunks(auto* matrix, size_t chunkSize)
     if(matrix->size()%chunkSize==0)
     {
         auto resultingMatrixSize = matrix->size()/chunkSize;
-        cout<<"RS: "<<resultingMatrixSize<<endl;
+
         auto myTemp = _2DSquareMatrix<vector<vector<int>>>(resultingMatrixSize);
         auto temp2DMatrixA = _2DSquareMatrix<int>(chunkSize);
 
@@ -134,12 +150,12 @@ int main(int argc, char **argv)
 {
 
     srand(time(NULL));
-    auto my2dM = _2DSquareMatrix<int>(64);
+    auto my2dM = _2DSquareMatrix<int>(16);
     PopulateRandomMatrix(&my2dM);
     printMatrix(&my2dM);
     cout<<endl;
 
-    transposeMatrixByChunks(&my2dM, 8);
+    transposeMatrixByChunks(&my2dM, 4);
 
 //     pthread_t pthreads[NUM_THREADS];
 //     int rc, taskids[NUM_THREADS];
