@@ -70,7 +70,7 @@ void transposeMatrixByChunks(auto* matrix, size_t chunkSize)
     if(matrix->size()%chunkSize==0)
     {
         auto resultingMatrixSize = matrix->size()/chunkSize;
-
+        cout<<"RS: "<<resultingMatrixSize<<endl;
         auto myTemp = _2DSquareMatrix<vector<vector<int>>>(resultingMatrixSize);
         auto temp2DMatrixA = _2DSquareMatrix<int>(chunkSize);
 
@@ -101,6 +101,16 @@ void transposeMatrixByChunks(auto* matrix, size_t chunkSize)
                 SerialMatrixTranspose(&myTemp.at(i).at(j));
         SerialMatrixTranspose(&myTemp);
 
+
+        for(auto i = 0; i<resultingMatrixSize; i++){
+
+
+            for(auto j = 0; j<resultingMatrixSize; j++){
+                printMatrix(&myTemp.at(j).at(i));
+                cout<<endl;
+              }
+              cout<<"----------"<<endl;
+            }
     }
 
 }
@@ -146,27 +156,88 @@ void *finalDTranspose (void * thread_arguments) {
     pthread_exit(NULL);
 }
 
+struct chunks_arg {
+    int thread_id;
+    vector<vector<int>> * matrix;
+    size_t chunk_size;
+};
+
+struct chunks_arg chunks_arg_array[NUM_THREADS];
+
+void *transposeByChunks(void * chunks_arguments){
+
+    auto taskid = 0;
+    vector<vector<int>> *array;
+    struct chunks_arg *arguments;
+    auto chunkSize = 0;
+
+    arguments = (struct chunks_arg *) chunks_arguments;
+    taskid = arguments->thread_id;
+    array = arguments->matrix;
+    chunkSize = arguments->chunk_size;
+
+    auto smaller_matrix_size = array->size()/chunkSize;
+
+    auto iterations = smaller_matrix_size/NUM_THREADS;
+    auto start = (taskid * iterations);
+    auto end = start + iterations;
+
+     if(array->size()%chunkSize==0)
+    {
+        cout<<"RS: "<<smaller_matrix_size<<endl;
+        auto myTemp = _2DSquareMatrix<vector<vector<int>>>(smaller_matrix_size);
+        auto temp2DMatrixA = _2DSquareMatrix<int>(chunkSize);
+
+
+        for(auto i = start; i < end; i++)//Cols
+        {//Assign the values of the matrix to the temp matrices
+
+            for(auto j = 0; j < smaller_matrix_size; j++)//Rows
+            {
+
+                for(auto k = 0; k < chunkSize; k++)
+                {
+
+                    for(auto l = 0; l < chunkSize; l++)
+                    {
+                        //Iterate along each row and col of the passed matrix to a temp matrix. Assign that temp matrix to the big larger matrix once it reaches an iteration of chunkSize
+                        temp2DMatrixA.at(k).at(l) = array->at(k+(i*chunkSize)).at(l+(j*chunkSize));
+                    }
+                }
+                myTemp.at(i).at(j) = temp2DMatrixA;
+            }
+
+        }
+
+        //Transpose the matrix by first transposing the  smaller matrices and then the larger
+        for(auto i = start; i<end; i++)
+            for(auto j = 0; j<smaller_matrix_size; j++)
+                SerialMatrixTranspose(&myTemp.at(i).at(j));
+        SerialMatrixTranspose(&myTemp);
+    }
+
+    pthread_exit(NULL);
+
+}
+
 int main(int argc, char **argv)
 {
 
     srand(time(NULL));
     auto my2dM = _2DSquareMatrix<int>(16);
+    auto chunk_size = 4;
     PopulateRandomMatrix(&my2dM);
-    printMatrix(&my2dM);
-    cout<<endl;
 
-    transposeMatrixByChunks(&my2dM, 4);
+    pthread_t pthreads[NUM_THREADS];
+    int rc, taskids[NUM_THREADS];
+    pthread_attr_t attr;
+    void *status;
 
-//     pthread_t pthreads[NUM_THREADS];
-//     int rc, taskids[NUM_THREADS];
-//     pthread_attr_t attr;
-//     void *status;
+    //initialise attribute 
+    pthread_attr_init(&attr);
 
-//     //initialise attribute 
-//     pthread_attr_init(&attr);
-
-//     //configure attribute to signal that threads are joinable
-//     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    //configure attribute to signal that threads are joinable
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
 //     for (int i = 0; i < NUM_THREADS; i++){
 //         taskids[i] = i;
@@ -180,24 +251,34 @@ int main(int argc, char **argv)
 //         }
 //     }
 
+    for (int i = 0; i < NUM_THREADS; i++){
+        taskids[i] = i;
+        chunks_arg_array[i].matrix = &my2dM;
+        chunks_arg_array[i].thread_id = taskids[i];
+        chunks_arg_array[i].chunk_size = chunk_size;
 
-// //join threads or wait until all threads complete routines
-//     for (int i = 0; i < NUM_THREADS; i++){
-//         rc = pthread_join(pthreads[i], &status);
-//         if(rc){
-//             cout << "Error: Unable to join " << rc << endl;
-//             exit(-1);
-//         }
+        rc = pthread_create(&pthreads[i], &attr, transposeByChunks, (void *) &chunks_arg_array[i]);
+        if(rc){
+            cout << "ERROR; return code from pthread_create() is " << rc << endl;
+            exit(-1);
+        }
+    }
 
-//         cout << "Main: completed thread: " << i << endl;
-//         cout << "exiting with staus " << status << endl;
-//     }
+//join threads or wait until all threads complete routines
+    for (int i = 0; i < NUM_THREADS; i++){
+        rc = pthread_join(pthreads[i], &status);
+        if(rc){
+            cout << "Error: Unable to join " << rc << endl;
+            exit(-1);
+        }
 
-// //destory attribute
-//     pthread_attr_destroy(&attr);
+        cout << "Main: completed thread: " << i << endl;
+        cout << "exiting with staus " << status << endl;
+    }
 
-    printMatrix(&my2dM);
-    cout << "Done" << endl;
+//destory attribute
+    pthread_attr_destroy(&attr);
+
 
 //terminate all remaining threads
      pthread_exit(NULL);
