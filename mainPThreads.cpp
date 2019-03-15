@@ -220,51 +220,32 @@ void *transposeByChunks(void * chunks_arguments){
 
 }
 
-int main(int argc, char **argv)
+void threadedDiagonalTranspose(auto * array) 
 {
-
-    srand(time(NULL));
-    auto my2dM = _2DSquareMatrix<int>(16);
-    auto chunk_size = 4;
-    PopulateRandomMatrix(&my2dM);
-
     pthread_t pthreads[NUM_THREADS];
     int rc, taskids[NUM_THREADS];
     pthread_attr_t attr;
     void *status;
 
-    //initialise attribute 
+        //initialise attribute 
     pthread_attr_init(&attr);
 
     //configure attribute to signal that threads are joinable
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-//     for (int i = 0; i < NUM_THREADS; i++){
-//         taskids[i] = i;
-//         thread_data_array[i].matrix = &my2dM;
-//         thread_data_array[i].thread_id = taskids[i];
-
-//         rc = pthread_create(&pthreads[i], &attr, finalDTranspose, (void *) &thread_data_array[i]);
-//         if(rc){
-//             cout << "ERROR; return code from pthread_create() is " << rc << endl;
-//             exit(-1);
-//         }
-//     }
-
     for (int i = 0; i < NUM_THREADS; i++){
         taskids[i] = i;
-        chunks_arg_array[i].matrix = &my2dM;
-        chunks_arg_array[i].thread_id = taskids[i];
-        chunks_arg_array[i].chunk_size = chunk_size;
+        thread_data_array[i].matrix = array;
+        thread_data_array[i].thread_id = taskids[i];
 
-        rc = pthread_create(&pthreads[i], &attr, transposeByChunks, (void *) &chunks_arg_array[i]);
+        rc = pthread_create(&pthreads[i], &attr, finalDTranspose, (void *) &thread_data_array[i]);
         if(rc){
             cout << "ERROR; return code from pthread_create() is " << rc << endl;
             exit(-1);
         }
     }
 
-//join threads or wait until all threads complete routines
+    //join threads or wait until all threads complete routines
     for (int i = 0; i < NUM_THREADS; i++){
         rc = pthread_join(pthreads[i], &status);
         if(rc){
@@ -278,6 +259,72 @@ int main(int argc, char **argv)
 
 //destory attribute
     pthread_attr_destroy(&attr);
+
+}
+
+int main(int argc, char **argv)
+{
+
+    srand(time(NULL));
+    auto my2dM = _2DSquareMatrix<int>(3);
+    auto chunk_size = 4;
+    PopulateRandomMatrix(&my2dM);
+    printMatrix(&my2dM);
+
+    threadedDiagonalTranspose(&my2dM);
+
+    printMatrix(&my2dM);
+
+//     pthread_t pthreads[NUM_THREADS];
+//     int rc, taskids[NUM_THREADS];
+//     pthread_attr_t attr;
+//     void *status;
+
+//     //initialise attribute 
+//     pthread_attr_init(&attr);
+
+//     //configure attribute to signal that threads are joinable
+//     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+// //     for (int i = 0; i < NUM_THREADS; i++){
+// //         taskids[i] = i;
+// //         thread_data_array[i].matrix = &my2dM;
+// //         thread_data_array[i].thread_id = taskids[i];
+
+// //         rc = pthread_create(&pthreads[i], &attr, finalDTranspose, (void *) &thread_data_array[i]);
+// //         if(rc){
+// //             cout << "ERROR; return code from pthread_create() is " << rc << endl;
+// //             exit(-1);
+// //         }
+// //     }
+
+//     for (int i = 0; i < NUM_THREADS; i++){
+//         taskids[i] = i;
+//         chunks_arg_array[i].matrix = &my2dM;
+//         chunks_arg_array[i].thread_id = taskids[i];
+//         chunks_arg_array[i].chunk_size = chunk_size;
+
+//         rc = pthread_create(&pthreads[i], &attr, transposeByChunks, (void *) &chunks_arg_array[i]);
+//         if(rc){
+//             cout << "ERROR; return code from pthread_create() is " << rc << endl;
+//             exit(-1);
+//         }
+//     }
+
+// //join threads or wait until all threads complete routines
+//     for (int i = 0; i < NUM_THREADS; i++){
+//         rc = pthread_join(pthreads[i], &status);
+//         if(rc){
+//             cout << "Error: Unable to join " << rc << endl;
+//             exit(-1);
+//         }
+
+//         cout << "Main: completed thread: " << i << endl;
+//         cout << "exiting with staus " << status << endl;
+//     }
+
+// //destory attribute
+//     pthread_attr_destroy(&attr);
 
 
 //terminate all remaining threads
