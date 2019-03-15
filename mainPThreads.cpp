@@ -314,7 +314,7 @@ void performComparison(auto* matrix)
   double time_taken = (end.tv_sec - start.tv_sec) * 1e6;
   time_taken = (end.tv_sec - start.tv_sec) * 1e6;
   time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
-  cout<<"time taken diagonal"<<fixed<<time_taken<<" sec"<<endl;
+  cout<<"time taken diagonal "<<fixed<<time_taken<<" sec"<<endl;
 
   //transposeMatrixByChunks
   gettimeofday(&start, NULL);
