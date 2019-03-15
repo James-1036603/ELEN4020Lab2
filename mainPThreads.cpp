@@ -4,8 +4,9 @@
 #include <vector>
 #include <time.h>
 #include <unistd.h>
+#include <sys/time.h>
 
-#define NUM_THREADS     2
+#define NUM_THREADS     4
 
 using namespace std;
 
@@ -184,7 +185,6 @@ void *transposeByChunks(void * chunks_arguments){
 
      if(array->size()%chunkSize==0)
     {
-        cout<<"RS: "<<smaller_matrix_size<<endl;
         auto myTemp = _2DSquareMatrix<vector<vector<int>>>(smaller_matrix_size);
         auto temp2DMatrixA = _2DSquareMatrix<int>(chunkSize);
 
@@ -252,9 +252,6 @@ void threadedDiagonalTranspose(auto * array)
             cout << "Error: Unable to join " << rc << endl;
             exit(-1);
         }
-
-        cout << "Main: completed thread: " << i << endl;
-        cout << "exiting with staus " << status << endl;
     }
 
 //destory attribute
@@ -298,9 +295,6 @@ void threadedChunksTranspose (auto * array)
             cout << "Error: Unable to join " << rc << endl;
             exit(-1);
         }
-
-        cout << "Main: completed thread: " << i << endl;
-        cout << "exiting with staus " << status << endl;
     }
 
     //destory attribute
@@ -308,14 +302,55 @@ void threadedChunksTranspose (auto * array)
 
 }
 
+void performComparison(auto* matrix)
+{//Perform an analysis of one thread to specified threads
+  struct timeval start,end;
+  cout<<"Performing comparison on size: "<<matrix->size()<<endl;
+
+  //transposeDiagonally
+  gettimeofday(&start, NULL);
+  threadedDiagonalTranspose(matrix);
+  gettimeofday(&end, NULL);
+  double time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+  time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+  time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+  cout<<"time taken diagonal"<<fixed<<time_taken<<" sec"<<endl;
+
+  //transposeMatrixByChunks
+  gettimeofday(&start, NULL);
+  threadedChunksTranspose(matrix);
+  gettimeofday(&end, NULL);
+  time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+  time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+  cout<<"time taken chunks "<< fixed<<time_taken<<" sec"<<endl;
+
+  cout << "\n" << endl;
+}
+
 int main(int argc, char **argv)
 {
 
     srand(time(NULL));
-    auto my2dM = _2DSquareMatrix<int>(3);
-    PopulateRandomMatrix(&my2dM);
 
-    transposeMatrixByChunks(&my2dM, 4);
+    //Matrix of N 128
+    auto my2dM = _2DSquareMatrix<int>(128);
+    PopulateRandomMatrix(&my2dM);
+    performComparison(&my2dM);
+
+    //Matrix of N 1024
+    my2dM = _2DSquareMatrix<int>(1024);
+    PopulateRandomMatrix(&my2dM);
+    performComparison(&my2dM);
+
+    //Matrix of N 2048
+    my2dM = _2DSquareMatrix<int>(2048);
+    PopulateRandomMatrix(&my2dM);
+    performComparison(&my2dM);
+
+    //Matrix of N 4096
+    my2dM = _2DSquareMatrix<int>(4096);
+    PopulateRandomMatrix(&my2dM);
+    performComparison(&my2dM);
 
 
     //terminate all remaining threads
