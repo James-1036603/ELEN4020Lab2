@@ -1,0 +1,165 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%2345678901234567890123456789012345678901234567890123456789012345678901234567890
+%        1         2         3         4         5         6         7         8
+
+%\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out if you need a4paper
+
+\documentclass[a4paper, 11pt, onecolumn, conference]{IEEEtran}      % Use this line for a4 paper
+
+\IEEEoverridecommandlockouts                            %   This command is only needed if 
+ % you want to use the \thanks command
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[]{algpseudocode}
+%\usepackage[]{algorithm2e}
+%\usepackage[pdftex]{graphicx}
+
+%\usepackage[final]{pdfpages}
+%\usepackage[pdftex]{graphicx}
+%\overrideIEEEmargins                                      % Needed to meet printer requirements.
+
+% See the \addtolength command later in the file to balance the column lengths
+% on the last page of the document
+
+% The following packages can be found on http:\\www.ctan.org
+%\usepackage{graphics} % for pdf, bitmapped graphics files
+%\usepackage{epsfig} % for postscript graphics files
+%\usepackage{mathptmx} % assumes new font selection scheme installed
+%\usepackage{times} % assumes new font selection scheme installed
+%\usepackage{amsmath} % assumes amsmath package installed
+%\usepackage{amssymb}  % assumes amsmath package installed
+
+\title{\LARGE \bf
+ELEN4020A: Data Intensive Computing Laboratory Exercise No 2
+}
+
+\author{ Kopantsho Mathafa (849038)\ \ \ \ \ \ Chizeba Maulu (900968) \ \ \ \ \ \ James Phillips (1036603) \\ \today \\
+}
+
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+    This report presents a summarized description of the solutions developed to solve the problem proposed in the lab brief. The solutions developed involve the use of OpenMP and Pthread, these were used to solve the problem of transposing a matrix using parallel programing methods. The computation times of all methods developed can be found in the table of results. Pseudo code to each method can also be found within the report.
+\end{abstract}
+
+\section{Introduction}
+Threads are independent streams of instructions which can be scheduled to execute, independently and asynchronously, by the operating system. Optimizing performance and efficiency in high performance computing environments are the primary reasons behind threads being implemented and used. \\
+
+The objective of this lab is to write a program which implements matrix transposition using parallel programming methods. The preferred language used is C++.
+
+This report discusses the use of threads in the solution to solving the problem of matrix transposition. The analysis technique involves the use of timing sequences to compare the speed and performance of the different methods presented in this report. A table of results of results can be found in the below. 
+
+\section{Matrix Transposition Using PThreads}
+
+PThreads or POSIX Threads, 
+
+\section{Matrix Transposition Using OpenMP}
+
+OpenMP or Open Multi-Processing, is a package which forms part of the GCC compiler in Linux environments. This package supports shared memory multiprocessing. Shown below is pseudo illustrating the use of OpenMP to transpose a matrix using parallelism. OpenMp is used to divide iterations of loops into threads which can be executed independently. 
+
+\subsection{OpenMP Pseudocode}
+
+
+\section{Critical Analysis and Future Recommendations}
+
+\begin{table}[!h]
+\label{T:equipos}
+\begin{center}
+\begin{tabular}{| c | c | c | c | c | c | c |}
+
+\hline
+
+\textbf{$ N_{0} = N_{1} $} & \textbf{Basic} & \multicolumn{2}{ c |}{\textbf{Pthreads}} & \multicolumn{3}{ c |}{\textbf{OpenMP}} \\ 
+
+\hline
+
+& & \textbf{Diagonal} & \textbf{Blocked} & \textbf{Naive} & \textbf{Diagonal} & \textbf{Blocked} \\
+\hline
+128 &  &  &  &  &  &   \\ \hline
+1024 &  &  &  &  &  &   \\ \hline
+2048 &  &  &  &  &  &   \\ \hline
+4096 &  &  &  &  &  &   \\ \hline
+
+\end{tabular}
+\end{center}
+\end{table}
+
+\section{Conclusion}
+ 
+
+\newpage
+\appendix
+
+
+
+\begin{algorithmic}
+
+\Function{createArray}{$dimension$}
+
+\For{$row=0$;  $row \gets dimension$}
+    \For{$column=0$; $column \gets dimension$}
+        $matrix[row][column] = rand() \% 21$
+    \EndFor
+\EndFor
+\EndFunction \\ \\
+
+
+\Function{rank2TensorAdd}{$A, B, rank$}
+\For{$row=0$; $row \gets rank$}
+    \For{$column=0$; $column \gets rank$}
+        $result[row][column] = A[row][column] + B[row][column]$ 
+    \EndFor
+\EndFor
+\EndFunction \\ \\ 
+
+\Function{rank2TensorMult}{$A, B, rank$}
+\For{$row=0$; $row \gets rank$}
+    \For{$column=0$;  $column \gets rank$}
+        \For{$iterator=0$; $iterator \gets rank$}
+        $result[row][column] += A[row][iterator] + B[iterator][column]$ 
+        \EndFor
+    \EndFor
+\EndFor
+\EndFunction \\ \\
+
+\Function{printFunc}{$matrix,size$}
+\For{$row=0$; $row \gets size$}
+    \For{$column=0$;  $column \gets size$}
+        $print(matrix[row][column])$
+    \EndFor
+\EndFor
+\EndFunction \\ \\
+
+\Function{rank3TensorMult}{$A$,$ B$,$rank$}
+
+\For{$depth=0$; $depth \gets rank$}
+    \For{$row=0$;  $row \gets rank$}
+        \For{$column=0$; $column \gets rank$}
+            \For{$iterator=0$;  $iterator \gets rank$}
+                 $result[row][column][depth] += A[row][iterator][depth] + B[iterator][column][depth] $
+            \EndFor
+        \EndFor
+    \EndFor
+\EndFor
+
+\EndFunction \\ \\ \\ 
+
+\Function{rank2TensorAdd}{$A, B, rank$}
+\For{$depth=0$; $depth \gets rank$}
+    \For{$row=0$;  $row \gets rank$}
+        \For{$column=0$; $column \gets rank$}
+      $$  result[row][column][depth] = A[row][column][depth] + B[row][column][depth] $$
+        \EndFor
+    \EndFor
+\EndFor
+\EndFunction \\ \\
+
+\end{algorithmic}
+
+
+
+\end{document}
+
