@@ -54,7 +54,7 @@ void SerialMatrixTranspose(auto* inMatrix)
 //creating struct of arguments to pass into routine
 struct thread_data {
     int thread_id;
-    vector<vector<int>> * matrix;    
+    vector<vector<int>> * matrix;
 };
 
 //array of argument structs
@@ -78,14 +78,23 @@ void *finalDTranspose (void * thread_arguments) {
 
 
 //performing diagonal transposition
+/*
        for (int i = start; i < end; i++){
         for (int j = i; j < array->size(); j++){
-            
+
             auto temp = array->at(i).at(j);
             array->at(i).at(j) = array->at(j).at(i);
             array->at(j).at(i) = temp;
 
        }
+    }
+*/
+  auto N = array -> size();
+    for (auto i = 0;  i < N-2;  i++) {
+      for (auto j = i+1; j < N-1; j++) {
+
+        swap(array->at(i).at(j), array->at(j).at(i));
+      }
     }
 
 //terminate thread after successful completion of routine
@@ -158,14 +167,14 @@ void *transposeByChunks(void * chunks_arguments){
 
 }
 
-void threadedDiagonalTranspose(auto * array) 
+void threadedDiagonalTranspose(auto * array)
 {
     pthread_t pthreads[NUM_THREADS];
     int rc, taskids[NUM_THREADS];
     pthread_attr_t attr;
     void *status;
 
-        //initialise attribute 
+        //initialise attribute
     pthread_attr_init(&attr);
 
     //configure attribute to signal that threads are joinable
@@ -176,7 +185,7 @@ void threadedDiagonalTranspose(auto * array)
         thread_data_array[i].matrix = array;
         thread_data_array[i].thread_id = taskids[i];
 
-        //create threads      
+        //create threads
         rc = pthread_create(&pthreads[i], &attr, finalDTranspose, (void *) &thread_data_array[i]);
         if(rc){
             cout << "ERROR; return code from pthread_create() is " << rc << endl;
@@ -209,7 +218,7 @@ void threadedChunksTranspose (auto * array)
     void *status;
 
 
-    //initialise attribute 
+    //initialise attribute
     pthread_attr_init(&attr);
 
     //configure attribute to signal that threads are joinable
