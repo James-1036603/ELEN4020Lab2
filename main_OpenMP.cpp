@@ -50,10 +50,8 @@ void PopulateRandomMatrix(auto* inMatrix)
 void SerialMatrixTranspose(auto* inMatrix, int threads)
 //Transposes a NxN matrix without any threading
 {
-
     auto N = inMatrix->size();
-	omp_set_num_threads(threads);
-	#pragma omp parallel for
+	  #pragma omp parallel for num_threads(threads) schedule(dynamic) shared(inMatrix)
     for(auto i = 0; i < N; i++)
     {
         for(auto j = i; j < N; j++){
@@ -68,15 +66,12 @@ void SerialMatrixTranspose(auto* inMatrix, int threads)
 void transposeMatrixByChunks(auto* matrix, size_t chunkSize, int threads)
 {//Transpose a matrix by dividing it into specified sized chunks. The matrix will have to be a factor of the chunk size to chunk evenly. THIS DOES NOT RETURN A MTRIX> MERELY TRANSPOSES AND DISPLAYS
 //Issue is you can't return the new smaller chuncked matrix to the others without a printing method
-		omp_set_num_threads(threads);
-
-
     if(matrix->size()%chunkSize==0)
     {
         auto resultingMatrixSize = matrix->size()/chunkSize;
         auto myTemp = _2DSquareMatrix<vector<vector<int>>>(resultingMatrixSize);
         auto temp2DMatrixA = _2DSquareMatrix<int>(chunkSize);
-		    #pragma omp parallel for
+		    #pragma omp parallel for num_threads(threads) schedule(dynamic) shared(matrix)
         for(auto i = 0; i < resultingMatrixSize; i++)//Cols
         {//Assign the values of the matrix to the temp matrices
 
@@ -117,8 +112,7 @@ void transposeMatrixByChunks(auto* matrix, size_t chunkSize, int threads)
 void transposeDiagonally(auto *matrix, int threads)
 {//Transposes the matrix along the diagonal. Also known as "in-place". This does change the passed matrix
 	auto N = matrix->size();
-	omp_set_num_threads(threads);
-	#pragma omp parallel for
+	#pragma omp parallel for  num_threads(threads) schedule(dynamic) shared(matrix)
   for (auto i = 0;  i < N-2;  i++) {
     for (auto j = i+1; j < N-1; j++) {
 
@@ -186,7 +180,7 @@ int main(int argc, char **argv)
 
 	srand(time(NULL));
 	struct timeval start,end;
-  int numberOfThreads = 4;
+  int numberOfThreads = 6;
   //128
 
   auto my2dM = _2DSquareMatrix<int>(128);
