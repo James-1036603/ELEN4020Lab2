@@ -8,6 +8,7 @@ int omp_get_num_threads();
 
 using namespace std;
 
+
 template<typename T> vector<vector<T>> _2DSquareMatrix(int dimension)
 //Template 2D square matrix
 {
@@ -49,10 +50,8 @@ void PopulateRandomMatrix(auto* inMatrix)
 void SerialMatrixTranspose(auto* inMatrix, int threads)
 //Transposes a NxN matrix without any threading
 {
-
     auto N = inMatrix->size();
-	omp_set_num_threads(threads);
-	#pragma omp parallel for
+	  #pragma omp parallel for num_threads(threads) schedule(dynamic) shared(inMatrix)
     for(auto i = 0; i < N; i++)
     {
         for(auto j = i; j < N; j++){
@@ -67,16 +66,12 @@ void SerialMatrixTranspose(auto* inMatrix, int threads)
 void transposeMatrixByChunks(auto* matrix, size_t chunkSize, int threads)
 {//Transpose a matrix by dividing it into specified sized chunks. The matrix will have to be a factor of the chunk size to chunk evenly. THIS DOES NOT RETURN A MTRIX> MERELY TRANSPOSES AND DISPLAYS
 //Issue is you can't return the new smaller chuncked matrix to the others without a printing method
-		omp_set_num_threads(threads);
-
-
     if(matrix->size()%chunkSize==0)
     {
         auto resultingMatrixSize = matrix->size()/chunkSize;
-
         auto myTemp = _2DSquareMatrix<vector<vector<int>>>(resultingMatrixSize);
         auto temp2DMatrixA = _2DSquareMatrix<int>(chunkSize);
-		    #pragma omp parallel for
+		    #pragma omp parallel for num_threads(threads) schedule(dynamic) shared(matrix)
         for(auto i = 0; i < resultingMatrixSize; i++)//Cols
         {//Assign the values of the matrix to the temp matrices
 
@@ -98,31 +93,34 @@ void transposeMatrixByChunks(auto* matrix, size_t chunkSize, int threads)
         }
 
         //Transpose the matrix by first transposing the  smaller matrices and then the larger
-
+        //Time is taken here to show the time of the transposition only
+        struct timeval start,end;
+        gettimeofday(&start, NULL);
         for(auto i = 0; i<resultingMatrixSize; i++)
             for(auto j = 0; j<resultingMatrixSize; j++)
                 SerialMatrixTranspose(&myTemp.at(i).at(j), threads);
         SerialMatrixTranspose(&myTemp,threads);
-
-    }
+        gettimeofday(&end, NULL);
+        double time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+      	time_taken = (time_taken + (end.tv_usec - start.tv_usec))*1e-6;
+      	cout<<"time taken to transpose inside chunks: "<<fixed<<time_taken<<" sec"<<endl;
+      }
 
 }
 
 
-void transposeDiagonally(auto* matrix, int threads)
+void transposeDiagonally(auto *matrix, int threads)
 {//Transposes the matrix along the diagonal. Also known as "in-place". This does change the passed matrix
-	auto tempMatrix = _2DSquareMatrix<int>(matrix->size());
-	omp_set_num_threads(threads);
-	#pragma omp parallel for
-	for(auto i = 0; i<matrix->size(); i++)
-	{
-		for(auto j = i; j < matrix->size(); j++)
-		{
-		auto tempVal = matrix->at(i).at(j);
-		matrix->at(i).at(j) = matrix->at(j).at(i);
-		matrix->at(j).at(i) = tempVal;
-		}
-	}
+	auto N = matrix->size();
+	#pragma omp parallel for  num_threads(threads) schedule(dynamic) shared(matrix)
+  for (auto i = 0;  i < N-2;  i++) {
+    for (auto j = i+1; j < N-1; j++) {
+
+      swap(matrix->at(i).at(j), matrix->at(j).at(i));
+    }
+  }
+
+
 }
 
 void performComparison(auto* matrix, int threads)
@@ -182,8 +180,9 @@ int main(int argc, char **argv)
 
 	srand(time(NULL));
 	struct timeval start,end;
-  int numberOfThreads = 4;
+  int numberOfThreads = 6;
   //128
+
   auto my2dM = _2DSquareMatrix<int>(128);
   PopulateRandomMatrix(&my2dM);
   performComparison(&my2dM, numberOfThreads);
@@ -202,9 +201,6 @@ int main(int argc, char **argv)
   my2dM = _2DSquareMatrix<int>(4096);
   PopulateRandomMatrix(&my2dM);
   performComparison(&my2dM, numberOfThreads);
-
-
-
 
 	return 0;
 }
