@@ -1,0 +1,190 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%2345678901234567890123456789012345678901234567890123456789012345678901234567890
+%        1         2         3         4         5         6         7         8
+
+%\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out if you need a4paper
+
+\documentclass[a4paper, 11pt, onecolumn, conference]{IEEEtran}      % Use this line for a4 paper
+
+\IEEEoverridecommandlockouts                            %   This command is only needed if 
+ % you want to use the \thanks command
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[]{algpseudocode}
+\usepackage[]{algorithm2e}
+%\usepackage[]{algorithm2e}
+%\usepackage[pdftex]{graphicx}
+
+%\usepackage[final]{pdfpages}
+%\usepackage[pdftex]{graphicx}
+%\overrideIEEEmargins                                      % Needed to meet printer requirements.
+
+% See the \addtolength command later in the file to balance the column lengths
+% on the last page of the document
+
+% The following packages can be found on http:\\www.ctan.org
+%\usepackage{graphics} % for pdf, bitmapped graphics files
+%\usepackage{epsfig} % for postscript graphics files
+%\usepackage{mathptmx} % assumes new font selection scheme installed
+%\usepackage{times} % assumes new font selection scheme installed
+%\usepackage{amsmath} % assumes amsmath package installed
+%\usepackage{amssymb}  % assumes amsmath package installed
+
+\title{\LARGE \bf
+ELEN4020A: Data Intensive Computing Laboratory Exercise No 2
+}
+
+\author{ Kopantsho Mathafa (849038)\ \ \ \ \ \ Chizeba Maulu (900968) \ \ \ \ \ \ James Phillips (1036603) \\ \today \\
+}
+
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+    This report presents a summarized description of the solutions developed to solve the problem proposed in the lab brief. The solutions developed involve the use of OpenMP and PThreads, these were used to solve the proposed problem of transposing a matrix using parallel programming methods. The computation times of all methods developed can be found in the table of results, which is presented in the report, along with pseudo code and finally a short analysis of the results.
+\end{abstract}
+
+\section{Introduction}
+Threads are independent streams of instructions which can be scheduled to execute, independently and asynchronously, by the operating system. Optimizing performance and efficiency in high performance computing environments are the primary reasons behind threads being implemented and used.The objective of this lab is to write programs which implement matrix transposition using parallel programming methods. The preferred language used is C++.\\
+
+This report discusses the use of threads in the solutions to solving the problem of matrix transposition. The analysis technique involves the use of timing sequences to compare the speed and performance of the different methods presented in this report. 
+
+\section{Matrix Transposition Implementation}
+To implement the matrix transposition in C++, three methods are provided which achieve the required transposition technique. The methods implemented are \textit{SerialMatrixTranspose} which transposes the matrix row by column by using a temporary variable as a place holder, a \textit{transposeDiagonally} method which transposes the matrix by using no additional space, and then a \textit{transposeMatrixByChunks} method which first performs a sub-matrix method on the larger matrix dividing it into a matrix of sub-matrices. The sub-matrices are then transposed using the serial method, the large matrix is then transposed resulting in the full transposition.\\
+
+Serial transposition is the traditional way in which matrices are transposed, where a temporary value is used to store an element, $A$, thereafter placing an element $B$ in $A$'s position, then the temporary value is placed in $B$'s old position\cite{learn_c_c_nodate}. This is achieved using two for-loops which iterate through the rows and columns of the matrix\cite{learn_c_c_nodate}. This implementation only requires an integer sized temporary place. Algorithm 1 presents the pseudocode to achieve this transposition.\\
+
+\begin{algorithm}
+\SetAlgoLined
+\KwResult{Transposed Matrix}
+Determine the size of the matrix $N$;\\
+\For{$i\gets0$\KwTo$N$}{
+\For{$j\getsi$\KwTo$N$}{
+    $temp$\gets$matrix[i][j]$
+    $matrix[i][j]$\gets$matrix[j][i]$
+    $matrix[j][i]$\gets$temp$
+}
+}
+\caption{Serial Matrix transposition}
+\end{algorithm}
+
+The chunks transposition first divides the larger matrix into specified sub-matrix sizes. The pseudo code presented in Algorithm 2 demonstrates the chunking and transposition process.
+\begin{algorithm}
+\SetAlgoLined
+\KwResult{\(RS\times RS\) Matrix }
+ Determine the Resulting Matrix Size (RS), Initialise a temporary matrix \textit{tempM} of size RS;\\
+ \uIf{Dimensions of matrixA mod chunkSize = 0}{
+    \For{$i\gets0$ \KwTo RS}{
+    \For{$j\gets0$ \KwTo RS}{
+    \For{$k\gets0$ \KwTo chunkSize}{
+    \For{$l\gets0$ \KwTo chunkSize}{
+    $tempM[k][l]$ \gets $matrixA[k+(i*chunkSize)][l+(j*chunksize)]$
+    }
+    }
+    }
+ }
+ 
+ }
+ Serial Transpose Matrix
+ \caption{Sub-matrix implementation}
+\end{algorithm}
+
+The diagonal transposition can be referred to as \textit{in place} transposition, where the transposition is achieved using two additional space\cite{noauthor_-place_2019}. This can easily be achieved for an \textit{nxn} matrix by using the \textit{swap} function of the C++ standard library, which will use no additional space\cite{noauthor_-place_2019}. An implementation is derived from the definition found on \textit{Wikipedia} and is presented in Algorithm 3 \cite{noauthor_-place_2019}.
+
+\begin{algorithm}
+\SetAlgoLined
+\KwResult{Transposed matrix}
+ Determine size of matrix to N;\\
+ \For{$i\gets0$ \KwTo N-2}{
+ \For{$j\getsi$ \KwTo N-1}{
+    swap $matrix[i][j]$ with $matrix[j][i]$
+ }
+ }
+ \caption{Diagonal implementation}
+\end{algorithm}
+
+\section{Matrix Transposition Using PThreads}
+
+The routines in transposeByChunks and finalDTranspose allow for only one argument to be passed into the pthread\_create function. The structure: pthread\_create(pthreads, attributes, routine, argument being passed into routine). The structs and struct arrays defined capture all the required arguments thus allowing a struct to be passed as an argument to the routine and its members being modified locally within the routine. Inside these routines, the $nxn$ array is transposed. This is done using a for-loop in which the outer loop iterations are divided evenly between the threads. Once the routine completes, pthread\_exit terminates the thread, i.e frees it up.\\
+
+In threadedDiagonalTranspose and threadedChunksTranspose: these functions create the specified number of threads. It creates threads with the attribute of being "joinable". Error modules are included in case a thread creation/join does not complete. Once the threads are created and thus the routines called, the threads are joined or allowed to complete before the program continues. Having joined successfully, the attribute is destroyed. 
+
+\section{Matrix Transposition Using OpenMP}
+
+OpenMP or Open Multi-Processing, is a package which forms part of the GCC compiler in Linux environments. This package supports shared memory multiprocessing\cite{utexas_getting_nodate}. Shown below is pseudo illustrating the use of OpenMP to transpose a matrix using parallelism. OpenMp is used to divide iterations of loops into threads which can be executed independently.\\
+
+Implementing OpenMP is a relatively easy step when compared to that of pthreads. The implementation relies on the fact that the single threaded methods are already implemented. From the serial implementation, the \textit{pragma} keyword is used to indicate which part of the code will be using OpenMP directives\cite{utexas_getting_nodate}.  Certain directives can be called to indicate which components of OpenMP are required. To run the segment of code in parallel, the parallel directive is used. The OpenMP library will then automatically attempt to split the code into the number of specified threads\cite{utexas_getting_nodate}. Certain clauses are added to the \textit{pragma} keyword to add certain specifications, such as \textit{num\_threads} will set the number of threads which are required\cite{utexas_getting_nodate}. OpenMP will automatically take the serial implementation of code, parallelise it and distribute that amoungst the number of threads\cite{utexas_getting_nodate}.\\
+
+To parallelise the implemented transposition functions, \textit{pragma} clauses are added to each segment of code which need to be parallelised. These clauses are added above each \textit{for} loop using the \textit{for} clause in the \textit{pragma}. The number of threads are specified at each clause, and the matrix which has to be transposed is specified to be shared memory.\\
+
+The above mentioned clauses are used in the three serial implementations. While the implementations for \textit{SerialMatrixTranspose} and \textit{transposeDiagonally} remain fairly simple, the \textit{transposeMatrixByChunks} needs some mention. There is a \textit{pragma} clause added to the sub-matrix implementation, which will assist in the sub-matrix procedure. As this function utilises the \textit{SerialMatrixTranspose} function to transpose the sub-matrices, no extra \textit{pragma} is added, as there already exists one inside this function.
+
+\subsection{OpenMP Pseudocode}
+
+Transpose Matrix Along Diagonal: In-place transpose of matrix. The original matrix will be modified.
+
+\begin{algorithmic}
+
+\Function{transposeDiagonally}{$matrix, threads$}
+
+$set\_num\_threads \gets threads$
+
+\For{$i \gets matrix.size$}
+    \For{$j \gets matrix.size$}
+      
+      $tempVal \gets matrix[i][j]$
+      
+      $matrix[i][j] \gets matrix[j][i]$
+      
+      $matrix[j][i] \gets tempVal$
+    \EndFor
+\EndFor
+
+\EndFunction \\ \\
+
+\end{algorithmic}
+
+
+\section{Critical Analysis and Future Recommendations}
+
+A main function is written which calls the methods implemented. The methods contain within them, timing sequences to compute the amount of time in seconds, that each transposition routine takes to fully transpose a given matrix. The results of these methods can be seen in Table 1. The results appear to be consistent and intuitive. Upon closer inspection it can be seen that there is a significant increase in computational time for $N$ = 128 to $N$ = 1024, where $N$ is the size of the matrix. This is understandable as there is an increase in the order of magnitude of $N$. Thereafter there is an increase in time, in seconds, as $N$ increases. The time increases by a constant factor with each increase in $N$. For example, in the case of the diagonal PThreads method, the time increased from $N$ = 1024 to $N$ = 2048 by a factor of 3.37. Similarly there is a time increase by a factor of 3.3 from $N$ = 2048 to $N$ = 4096. There is a linear increase in time as the number of elements increase. In Big Oh notation the running time can be characterized as O(3.3n) and thus, more generally O(n). A similar pattern follows for the other methods.\\
+
+This is an indication of the scalability of the solution. There is a linearly proportional relationship between the size of the matrix and the computational times. One possible explanation for this is that the low number of threads used reduces the possibility of false sharing. False sharing is a term given when threads try to access independent variables that share the same cache line\cite{thompson_2011}.\\
+
+If a thread gains access to a particular cache line, all other threads need to wait until that thread has completed its task, and reliquished control of the cache line, before they can gain access to that cache line and the variables in it. This means threads can directly impact the performance of other threads. The greater the number of threads used the more likely false sharing is to happen and the greater its impact on the performance of a multi-threaded program. For this reason simply increasing the number of threads used in a program may not necessarily improve the performance of a program.\\
+
+OpenMP performed better than PThreads, although it is important to note that the times presented for OpenMP are strictly the time required to compute the transposition. The times recorded for PThreads on the other hand have an overhead of setting up the multi-threading environment. Regardless the Diagonal method using OpenMP gave the best result of all the methods implemented.
+
+\begin{table}[H]
+\label{T:equipos}
+\begin{center}
+\caption{Performance of PThreads and OpenMP methods}
+\begin{tabular}{| c | c | c | c | c | c | c |}
+
+\hline
+
+\textbf{$ N_{0} = N_{1} $} & \textbf{Basic} & \multicolumn{2}{ c |}{\textbf{Pthreads}} & \multicolumn{3}{ c |}{\textbf{OpenMP}} \\ 
+
+\hline
+
+& & \textbf{Diagonal} & \textbf{Blocked} & \textbf{Naive} & \textbf{Diagonal} & \textbf{Blocked} \\
+\hline
+128 & 0 s & 0.997 ms & 0.997 ms  & 0.998 ms  & 0 s  & 4.99 ms   \\ \hline
+1024 & 30.93 ms & 37.89 ms & 81.77 ms & 13.95 ms & 8.98 ms & 28.9 ms   \\ \hline
+2048 & 136.63 ms & 127.64 ms & 324.13 ms & 63.83 ms & 41.89 ms & 94.72 ms  \\ \hline
+4096 & 598.93 ms & 420.85 ms & 1.36 s & 279.24 ms & 194.02 ms & 347.09 ms  \\ \hline
+
+\end{tabular}
+\end{center}
+\end{table}
+
+\section{Conclusion}
+
+Six different methods of matrix transposition have been presented. Five of these are implemented using parallel programming libraries. The performance of each of the methods are presented and brief discussion of the results was also presented. The best performing method is stated and suggestions are given to why the performance methods performed the way that they did.
+ 
+\bibliographystyle{IEEEtran}
+\bibliography{references.bib}
+\end{document}
+
